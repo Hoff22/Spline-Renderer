@@ -172,6 +172,11 @@ void MainWindow::drawOptions() {
 		ImGui::EndGroup();
 		ImGui::SliderFloat("Zoom", &Scene::Zoom, 0.0f, 20.0f, "%.2f");
 		ImGui::SliderInt("Segments", &Scene::paramsi[0], 1, 100);
+		if (ImGui::Button("Clear")) {
+			Scene::paramsb[0] = 1;
+		}
+		ImGui::SameLine();
+		ImGui::Checkbox("render", &Scene::paramsb[1]);
 
 	ImGui::End();
 }

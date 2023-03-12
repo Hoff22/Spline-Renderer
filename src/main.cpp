@@ -12,7 +12,7 @@
 
 using namespace std;
 
-float	p_f[8] = { 10.0f / 255.0f, 10.0f / 255.0f, 10.0f / 255.0f, 200.0f / 255.0f, 10.0, 3.0, 2.0, 5.5 };
+float	p_f[8] = { 25.0f / 255.0f, 25.0f / 255.0f, 25.0f / 255.0f, 255.0f / 255.0f, 10.0, 3.0, 2.0, 5.5 };
 int		p_i[8] = { 10, 0, 0, 0, 0, 0, 0, 0 };
 bool	p_b[8] = { false, false, false, false, false, false, false, false };
 bool	i_p[6] = { false, false ,false ,false ,false ,false };
@@ -89,6 +89,11 @@ int main() {
 		glfwGetCursorPos(MainWindow::window, &mouseX, &mouseY);
 		MainWindow::handle_input(MainWindow::window, 1.0f);
 			
+		if (Scene::paramsb[0]) {
+			Scene::objects.clear();
+			Scene::paramsb[0] = false;
+		}
+
 		// calculate shit
 		if (Scene::left_click) {
 			glm::vec2 mousePos = screen_to_world_pos(mouseX, mouseY);
@@ -130,6 +135,7 @@ int main() {
 			glm::vec2 mousePos = screen_to_world_pos(mouseX, mouseY);
 			if (selectedSpline == 0) {
 				Scene::objects.push_back(new Spline(mousePos));
+				selectedSpline = Scene::objects.back();
 			}
 			else {
 				cout << "add spline control point to (" << selectedSpline->control.back()->point.x << "," << selectedSpline->control.back()->point.y << ")" << endl;
@@ -145,7 +151,9 @@ int main() {
 			selectedPoint = 0;
 		}
 
-		for (auto s : Scene::objects) s->drawSpline(Scene::paramsi[0]);
+		if (Scene::paramsb[1]) {
+			for (auto s : Scene::objects) s->drawSpline(Scene::paramsi[0]);
+		}
 
 		//update camera
 		updateCamera();

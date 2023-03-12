@@ -211,6 +211,8 @@ struct Mesh {
 
 struct DrawObject {
 	GLuint VAO;
+	GLuint VBO;
+	GLuint VIO;
 	GLuint indexes_size;
 
 	DrawObject() :
@@ -239,6 +241,8 @@ public:
 
 	// returns a VAO for the specified vertex array and indice array;
 	static GLuint BuildTrianglesVAO(const vector<float>& vertex_position, const vector<float>& vertex_normals, const vector<GLuint>& face_indexes);
+	static void   BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<GLuint>& indices, DrawObject* obj);
+	static GLuint BuildTrianglesVAO(const vector<float>& vertex_position, const vector<GLuint>& face_indexes);
 
 	static void RenderTriangles(const DrawObject& obj, const Transform& tr, Camera* camera, bool lines);
 

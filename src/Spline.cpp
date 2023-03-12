@@ -72,7 +72,6 @@ void Spline::drawSpline(int def = 30) {
 		}
 		return;
 	}
-	
 	vector<float> model_coeficients;
 	vector<GLuint> indices;
 
@@ -92,12 +91,19 @@ void Spline::drawSpline(int def = 30) {
 		indices.push_back(i);
 		indices.push_back(i);
 	}
-
-	Renderer::pq.push(make_tuple(2, DrawObject(Renderer::BuildTrianglesVAO(model_coeficients, vector<float>(0), indices), indices.size()), Transform()));
+#if 1	
+	Renderer::BuildTrianglesVAO(model_coeficients, indices, this->draw_object);
+	this->draw_object->indexes_size = indices.size();
+	Renderer::pq.push(make_tuple(2, *this->draw_object, Transform()));
+	model_coeficients.clear();
+	indices.clear();
+#endif
+	
 
 	for (ControlPoint* i : this->control) {
 		if (i->handleL != i->point) Renderer::pq.push(make_tuple(1, Renderer::circle_primitive, Transform(glm::vec3(i->handleL, 0.0), glm::quat(), glm::vec3(0.2))));
 		Renderer::pq.push(make_tuple(1, Renderer::circle_primitive, Transform(glm::vec3(i->point, 0.0), glm::quat(), glm::vec3(0.5))));
 		if (i->handleR != i->point) Renderer::pq.push(make_tuple(1, Renderer::circle_primitive, Transform(glm::vec3(i->handleR, 0.0), glm::quat(), glm::vec3(0.2))));
 	}
+
 }

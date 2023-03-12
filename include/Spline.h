@@ -58,6 +58,7 @@ class Spline
 public:
 	vector<ControlPoint*> control;
 	vector<glm::vec2> points;
+	DrawObject* draw_object;
 
 	void updatePoints();
 	void addControlPoint(glm::vec2 p1);
@@ -65,7 +66,8 @@ public:
 	void drawSpline(int def);
 
 	Spline() :
-		control(vector<ControlPoint*>())
+		control(vector<ControlPoint*>()),
+		draw_object(new DrawObject())
 	{
 		
 	}
