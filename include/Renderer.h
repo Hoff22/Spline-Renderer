@@ -217,10 +217,14 @@ struct DrawObject {
 
 	DrawObject() :
 		VAO(0),
+		VBO(0),
+		VIO(0),
 		indexes_size(0)
 	{}
-	DrawObject(GLuint vao, GLuint idx_n) :
+	DrawObject(GLuint vao, GLuint vbo, GLuint vio, GLuint idx_n) :
 		VAO(vao),
+		VBO(vbo),
+		VIO(vio),
 		indexes_size(idx_n)
 	{}
 
@@ -237,14 +241,14 @@ public:
 	static Shader lineShader;
 	static DrawObject circle_primitive;
 
-	static priority_queue<tuple<int, DrawObject, Transform>> pq;
+	static priority_queue<tuple<int, DrawObject*, Transform>> pq;
 
 	// returns a VAO for the specified vertex array and indice array;
 	static GLuint BuildTrianglesVAO(const vector<float>& vertex_position, const vector<float>& vertex_normals, const vector<GLuint>& face_indexes);
 	static void   BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<GLuint>& indices, DrawObject* obj);
 	static GLuint BuildTrianglesVAO(const vector<float>& vertex_position, const vector<GLuint>& face_indexes);
 
-	static void RenderTriangles(const DrawObject& obj, const Transform& tr, Camera* camera, bool lines);
+	static void RenderTriangles(DrawObject* obj, const Transform& tr, Camera* camera, bool lines);
 
 	static void initFrame(glm::vec4 bg_color);
 

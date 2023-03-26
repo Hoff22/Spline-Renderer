@@ -177,6 +177,8 @@ void MainWindow::drawOptions() {
 		}
 		ImGui::SameLine();
 		ImGui::Checkbox("render", &Scene::paramsb[1]);
+		ImGui::SameLine();
+		ImGui::Checkbox("lock", &Scene::paramsb[2]);
 
 	ImGui::End();
 }

@@ -14,7 +14,7 @@ using namespace std;
 
 float	p_f[8] = { 25.0f / 255.0f, 25.0f / 255.0f, 25.0f / 255.0f, 255.0f / 255.0f, 10.0, 3.0, 2.0, 5.5 };
 int		p_i[8] = { 10, 0, 0, 0, 0, 0, 0, 0 };
-bool	p_b[8] = { false, false, false, false, false, false, false, false };
+bool	p_b[8] = { true, true, false, false, false, false, false, false };
 bool	i_p[6] = { false, false ,false ,false ,false ,false };
 
 glm::vec2 screen_to_world_pos(float xpos, float ypos) {
@@ -78,7 +78,9 @@ int main() {
 	initScene();
 	Renderer::setupPrimitives();
 
-	glm::vec2* selectedPoint = 0;
+	glm::vec2* selectedPointA = 0;
+	glm::vec2* selectedPointB = 0;
+	glm::vec2* selectedPointC = 0;
 	Spline* selectedSpline = 0;
 
 	// while loop
@@ -103,14 +105,18 @@ int main() {
 				for (ControlPoint* i : s->control) {
 					if (i->handleL != i->point) {
 						if (glm::distance(mousePos, i->handleL) <= 0.2) {
-							selectedPoint = &(i->handleL);
+							selectedPointA = &(i->handleL);
+							selectedPointB = &(i->handleR);
+							selectedPointC = &(i->point);
 							selectedSpline = s;
 							found = 1;
 							break;
 						}
 					}
 					if (glm::distance(mousePos, i->point) <= 0.5) {
-						selectedPoint = &(i->point);
+						selectedPointA = &(i->point);
+						selectedPointB = &(i->point);
+						selectedPointC = 0;
 						selectedSpline = s;
 						found = 1;
 						break;
@@ -118,7 +124,9 @@ int main() {
 					
 					if (i->handleR != i->point) {
 						if (glm::distance(mousePos, i->handleR) <= 0.2) {
-							selectedPoint = &(i->handleR);
+							selectedPointA = &(i->handleR);
+							selectedPointB = &(i->handleL);
+							selectedPointC = &(i->point);
 							selectedSpline = s;
 							found = 1;
 							break;
@@ -143,12 +151,15 @@ int main() {
 				selectedSpline->updatePoints();
 			}
 		}
-		if ((Scene::left_click or Scene::mouse_draggin) and selectedPoint != 0) {
-			*selectedPoint = screen_to_world_pos(mouseX, mouseY);
+		if ((Scene::left_click or Scene::mouse_draggin) and selectedPointA != 0) {
+			*selectedPointA = screen_to_world_pos(mouseX, mouseY);
+			if (Scene::paramsb[2] and selectedPointC != 0) {
+				*selectedPointB = *selectedPointC - (*selectedPointA - *selectedPointC);
+			}
 			selectedSpline->updatePoints();
 		}
 		else {
-			selectedPoint = 0;
+			selectedPointA = 0;
 		}
 
 		if (Scene::paramsb[1]) {

@@ -4,7 +4,7 @@ GLsizei Renderer::FRAME_WIDTH = 800;
 GLsizei Renderer::FRAME_HEIGHT = 600;
 Shader Renderer::lineShader;
 DrawObject Renderer::circle_primitive;
-priority_queue<tuple<int, DrawObject, Transform>> Renderer::pq;
+priority_queue<tuple<int, DrawObject*, Transform>> Renderer::pq;
 
 GLuint Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<float>& normal_coefficients, const vector<GLuint>& indices)
 {
@@ -73,8 +73,14 @@ GLuint Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, cons
 void Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<GLuint>& indices, DrawObject* obj)
 {
 #if 1
+	if (obj->VAO == 0) {
+		glGenVertexArrays(1, &obj->VAO);
+	}
 	glBindVertexArray(obj->VAO);
 
+	if (obj->VBO == 0) {
+		glGenBuffers(1, &obj->VBO);
+	}
 	GLuint VBO_model_coefficients_id = obj->VBO;
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_model_coefficients_id);
 	glBufferData(GL_ARRAY_BUFFER, model_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
@@ -85,6 +91,9 @@ void Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const 
 	glEnableVertexAttribArray(location);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	if (obj->VIO == 0) {
+		glGenBuffers(1, &obj->VIO);
+	}
 	GLuint indices_id = obj->VIO;
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), NULL, GL_STATIC_DRAW);
@@ -122,17 +131,19 @@ GLuint Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, cons
 	return VAO;
 }
 
-void Renderer::RenderTriangles(const DrawObject& obj, const Transform& tr, Camera* camera, bool lines) {
+void Renderer::RenderTriangles(DrawObject* obj, const Transform& tr, Camera* camera, bool lines) {
 	lineShader.use();
 	lineShader.setMatrix4("view_m", camera->GetViewMatrix());
 	lineShader.setMatrix4("proj_m", camera->GetProjectionMatrix());
 	lineShader.setMatrix4("mode_m", tr.GetModelMatrix());
 
-	glBindVertexArray(obj.VAO);
+	cout << "rendering obj VAO: " << obj->VAO << endl;
+
+	glBindVertexArray(obj->VAO);
 	glCullFace(GL_BACK);
-	glLineWidth(5);
-	if(lines) glDrawElements(GL_LINES, obj.indexes_size, GL_UNSIGNED_INT, 0);
-	else glDrawElements(GL_TRIANGLES, obj.indexes_size, GL_UNSIGNED_INT, 0);
+	glLineWidth(2);
+	if(lines) glDrawElements(GL_LINES, obj->indexes_size, GL_UNSIGNED_INT, 0);
+	else glDrawElements(GL_TRIANGLES, obj->indexes_size, GL_UNSIGNED_INT, 0);
 
 	glBindVertexArray(0);
 }
@@ -160,7 +171,7 @@ void Renderer::drawFrame(glm::vec4 bg_color, Camera* camera) {
 
 	while (pq.size()) {
 		int prio;
-		DrawObject obj;
+		DrawObject* obj;
 		Transform tr;
 		tie(prio, obj, tr) = pq.top();
 		RenderTriangles(obj, tr, camera, (prio == 2));
