@@ -70,7 +70,7 @@ GLuint Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, cons
 
 	return VAO;
 }
-void Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<GLuint>& indices, DrawObject* obj)
+void Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<float>& nromal_coefficients, const vector<float>& tangent_coefficients, const vector<float>& uv_coefficients, const vector<GLuint>& indices, DrawObject* obj)
 {
 #if 1
 	if (obj->VAO == 0) {
@@ -78,11 +78,23 @@ void Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const 
 	}
 	glBindVertexArray(obj->VAO);
 
-	if (obj->VBO == 0) {
-		glGenBuffers(1, &obj->VBO);
+	if (obj->VBO_positions == 0) {
+		glGenBuffers(1, &obj->VBO_positions);
 	}
-	GLuint VBO_model_coefficients_id = obj->VBO;
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_model_coefficients_id);
+	if (obj->VBO_normals == 0) {
+		glGenBuffers(1, &obj->VBO_normals);
+	}
+	if (obj->VBO_tangents == 0) {
+		glGenBuffers(1, &obj->VBO_tangents);
+	}
+	if (obj->VBO_uv == 0) {
+		glGenBuffers(1, &obj->VBO_uv);
+	}
+	if (obj->VBO_index == 0) {
+		glGenBuffers(1, &obj->VBO_index);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO_positions);
 	glBufferData(GL_ARRAY_BUFFER, model_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, model_coefficients.size() * sizeof(float), model_coefficients.data());
 	GLuint location = 0; // "(location = 0)" em "shader_vertex.glsl"
@@ -91,10 +103,34 @@ void Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const 
 	glEnableVertexAttribArray(location);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	if (obj->VIO == 0) {
-		glGenBuffers(1, &obj->VIO);
-	}
-	GLuint indices_id = obj->VIO;
+	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO_normals);
+	glBufferData(GL_ARRAY_BUFFER, nromal_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, nromal_coefficients.size() * sizeof(float), nromal_coefficients.data());
+	location = 1; // "(location = 0)" em "shader_vertex.glsl"
+	number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+	glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(location);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO_tangents);
+	glBufferData(GL_ARRAY_BUFFER, tangent_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, tangent_coefficients.size() * sizeof(float), tangent_coefficients.data());
+	location = 2; // "(location = 0)" em "shader_vertex.glsl"
+	number_of_dimensions = 4; // vec4 em "shader_vertex.glsl"
+	glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(location);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, obj->VBO_uv);
+	glBufferData(GL_ARRAY_BUFFER, uv_coefficients.size() * sizeof(float), NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, uv_coefficients.size() * sizeof(float), uv_coefficients.data());
+	location = 3; // "(location = 0)" em "shader_vertex.glsl"
+	number_of_dimensions = 2; // vec2 em "shader_vertex.glsl"
+	glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(location);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GLuint indices_id = obj->VBO_index;
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_id);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), NULL, GL_STATIC_DRAW);
 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indices.size() * sizeof(GLuint), indices.data());
@@ -131,18 +167,35 @@ GLuint Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, cons
 	return VAO;
 }
 
-void Renderer::RenderTriangles(DrawObject* obj, const Transform& tr, Camera* camera, bool lines) {
+void Renderer::RenderTriangles(DrawObject* obj, const Transform& tr, Camera* camera, int prio, float thickness = 10.0) {
 	lineShader.use();
 	lineShader.setMatrix4("view_m", camera->GetViewMatrix());
 	lineShader.setMatrix4("proj_m", camera->GetProjectionMatrix());
 	lineShader.setMatrix4("mode_m", tr.GetModelMatrix());
 
-	cout << "rendering obj VAO: " << obj->VAO << endl;
+	lineShader.setFloat("isLineSegment", 0.0);
+
+	if (prio == 0) {
+		lineShader.setFloat4("solid_color", glm::vec4(0.5, 0.5, 0.5, 1.0));
+	}
+	else if (prio == 1) {
+		lineShader.setFloat4("solid_color", glm::vec4(0.8, 0.8, 0.8, 1.0));
+	}
+	else if (prio == 2) {
+		lineShader.setFloat4("solid_color", glm::vec4(0.0, 0.0, 0.0, 1.0));
+		lineShader.setFloat("thickness", thickness);
+		lineShader.setFloat("isLineSegment", 1.0);
+	}
+	else if (prio == 3) {
+		lineShader.setFloat4("solid_color", glm::vec4(0.8, 0.8, 0.8, 1.0));
+	}
+
+	// cout << "rendering obj VAO: " << obj->VAO << endl;
 
 	glBindVertexArray(obj->VAO);
 	glCullFace(GL_BACK);
 	glLineWidth(2);
-	if(lines) glDrawElements(GL_LINES, obj->indexes_size, GL_UNSIGNED_INT, 0);
+	if(prio == 2) glDrawElements(GL_TRIANGLE_STRIP, obj->indexes_size, GL_UNSIGNED_INT, 0);
 	else glDrawElements(GL_TRIANGLES, obj->indexes_size, GL_UNSIGNED_INT, 0);
 
 	glBindVertexArray(0);
@@ -161,7 +214,7 @@ void Renderer::initFrame(glm::vec4 bg_color) {
 	glFrontFace(GL_CCW);
 }
 
-void Renderer::drawFrame(glm::vec4 bg_color, Camera* camera) {
+void Renderer::drawFrame(glm::vec4 bg_color, Camera* camera, float thickness = 10.0) {
 	
 	initFrame(bg_color);
 	
@@ -174,7 +227,7 @@ void Renderer::drawFrame(glm::vec4 bg_color, Camera* camera) {
 		DrawObject* obj;
 		Transform tr;
 		tie(prio, obj, tr) = pq.top();
-		RenderTriangles(obj, tr, camera, (prio == 2));
+		RenderTriangles(obj, tr, camera, prio, thickness);
 		pq.pop();
 	}
 

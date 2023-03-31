@@ -171,6 +171,7 @@ void MainWindow::drawOptions() {
 		ImGui::Text("y: %d", std::min(std::max((int)ypos, 0), SCR_HEIGHT));
 		ImGui::EndGroup();
 		ImGui::SliderFloat("Zoom", &Scene::Zoom, 0.0f, 20.0f, "%.2f");
+		ImGui::SliderFloat("Thickness", &Scene::paramsf[4], 0.0f, 50.0f, "%.2f");
 		ImGui::SliderInt("Segments", &Scene::paramsi[0], 1, 100);
 		if (ImGui::Button("Clear")) {
 			Scene::paramsb[0] = 1;

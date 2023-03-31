@@ -211,21 +211,21 @@ struct Mesh {
 
 struct DrawObject {
 	GLuint VAO;
-	GLuint VBO;
-	GLuint VIO;
+	GLuint VBO_positions;
+	GLuint VBO_normals;
+	GLuint VBO_tangents;
+	GLuint VBO_uv;
+	GLuint VBO_index;
 	GLuint indexes_size;
 
 	DrawObject() :
 		VAO(0),
-		VBO(0),
-		VIO(0),
+		VBO_positions(0),
+		VBO_index(0),
+		VBO_normals(0),
+		VBO_tangents(0),
+		VBO_uv(0),
 		indexes_size(0)
-	{}
-	DrawObject(GLuint vao, GLuint vbo, GLuint vio, GLuint idx_n) :
-		VAO(vao),
-		VBO(vbo),
-		VIO(vio),
-		indexes_size(idx_n)
 	{}
 
 	bool operator < (const DrawObject& b) const {
@@ -245,14 +245,14 @@ public:
 
 	// returns a VAO for the specified vertex array and indice array;
 	static GLuint BuildTrianglesVAO(const vector<float>& vertex_position, const vector<float>& vertex_normals, const vector<GLuint>& face_indexes);
-	static void   BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<GLuint>& indices, DrawObject* obj);
+	static void   BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<float>& nromal_coefficients, const vector<float>& tangent_coefficients, const vector<float>& uv_coefficients, const vector<GLuint>& indices, DrawObject* obj);
 	static GLuint BuildTrianglesVAO(const vector<float>& vertex_position, const vector<GLuint>& face_indexes);
 
-	static void RenderTriangles(DrawObject* obj, const Transform& tr, Camera* camera, bool lines);
+	static void RenderTriangles(DrawObject* obj, const Transform& tr, Camera* camera, int prio, float thickness);
 
 	static void initFrame(glm::vec4 bg_color);
 
-	static void drawFrame(glm::vec4 bg_color, Camera* camera);
+	static void drawFrame(glm::vec4 bg_color, Camera* camera, float thickness);
 	
 	static void setupPrimitives();
 };

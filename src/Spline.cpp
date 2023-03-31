@@ -44,11 +44,9 @@ double segmentLen(ControlPoint* p1, ControlPoint* p2) {
 }
 
 void Spline::computeLUT() {
-	this->LUT_lengths.resize(RESOLUTION * (this->control.size() - 1) + 1);
-
-	this->LUT_lengths[0].first = 0.0;
-	this->LUT_lengths[0].second = 1.0;
-
+	//this->LUT_lengths.resize(RESOLUTION * this->control.size() + 1);
+	this->LUT_lengths.clear();
+	this->LUT_lengths.push_back({ 0.0,0.0 });
 	ControlPoint* last = this->control[0];
 	for (int i = 1; i < this->control.size(); i++) {
 
@@ -58,29 +56,32 @@ void Spline::computeLUT() {
 		for (int j = 1; j <= RESOLUTION; j++) {
 			double t = 1.0 * j / RESOLUTION;
 			glm::vec2 p_j = pointAt(last, cur, t);
-			this->LUT_lengths[(i - 1) * RESOLUTION + j].first = this->LUT_lengths[(i - 1) * RESOLUTION + j-1].first + glm::distance(last_p, p_j);
-			this->LUT_lengths[(i - 1) * RESOLUTION + j].second = t;
+			this->LUT_lengths.push_back({
+				this->LUT_lengths.back().first + glm::distance(last_p, p_j),
+				t
+			});
 			last_p = p_j;
 		}
 
 		last = this->control[i];
 	}
 
-	this->total_length = this->LUT_lengths[this->LUT_lengths.size() - 1].first;
+	this->total_length = this->LUT_lengths.back().first;
 }
 
 void Spline::drawSpline(int def = 30) {
 	
 	for (ControlPoint* i : this->control) {
-		if (i->handleL != i->point) Renderer::pq.push(make_tuple(1, &Renderer::circle_primitive, Transform(glm::vec3(i->handleL, 0.0), glm::quat(), glm::vec3(0.2))));
+		if (i->handleL != i->point) Renderer::pq.push(make_tuple(0, &Renderer::circle_primitive, Transform(glm::vec3(i->handleL, 0.0), glm::quat(), glm::vec3(0.2))));
 		Renderer::pq.push(make_tuple(1, &Renderer::circle_primitive, Transform(glm::vec3(i->point, 0.0), glm::quat(), glm::vec3(0.5))));
-		if (i->handleR != i->point) Renderer::pq.push(make_tuple(1, &Renderer::circle_primitive, Transform(glm::vec3(i->handleR, 0.0), glm::quat(), glm::vec3(0.2))));
+		if (i->handleR != i->point) Renderer::pq.push(make_tuple(0, &Renderer::circle_primitive, Transform(glm::vec3(i->handleR, 0.0), glm::quat(), glm::vec3(0.2))));
 	}
 
 	if (this->control.size() <= 1) return;
 
 	vector<glm::vec2> points;
 
+	points.push_back(this->control[0]->point);
 	double next_length = this->total_length / def;
 	for (int i = 0; i < this->LUT_lengths.size()-1; i++) {
 		int control_point_idx = i / RESOLUTION;
@@ -92,33 +93,96 @@ void Spline::drawSpline(int def = 30) {
 			ta = 0.0f;
 			points.push_back(this->control[i/RESOLUTION]->point);
 		}
+
 		double delta_t = tb - ta;
 		double delta_d = db - da;
-		while (next_length <= this->LUT_lengths[i + 1].first) {
-			double t = ta + delta_t * ((next_length - da) / delta_d);
+		double t;
+		while (next_length <= this->LUT_lengths[i + 1].first + 0.002) {
+			t = ta + delta_t * ((next_length - da) / delta_d);
 			points.push_back(pointAt(this->control[control_point_idx], this->control[control_point_idx + 1], t));
 			next_length += this->total_length / def;
 		}
 	}
-
-	points.push_back(this->control.back()->point);
-
-	//cout << "points size for spline_id: " << spl_id << " | " << points.size() << endl;
 	
+	vector<float> uv_coeficients;
 	vector<float> model_coeficients;
+	vector<float> normal_coeficients;
+	vector<float> tangent_coeficients;
 	vector<GLuint> indices;
 
-	indices.push_back(0);
+	int cur_idx = 0;
+	glm::vec4 last_normal(0.0);
 	for (int i = 0; i < points.size(); i++) {
-		model_coeficients.push_back(points[i].x);
-		model_coeficients.push_back(points[i].y);
+
+		glm::vec4 tangent;
+
+		if (i == points.size() - 1) {
+			tangent = glm::vec4(points[i] - points[i - 1], 0.0, 0.0);
+		}
+		else {
+			tangent = glm::vec4(points[i + 1] - points[i], 0.0, 0.0);
+		}
+
+		tangent = glm::normalize(tangent);
+
+		glm::mat4 rotate_90 = glm::rotate(glm::identity<mat4>(), glm::half_pi<float>(), glm::vec3(0.0, 0.0, 1.0));
+
+		glm::vec4 curve_normal = rotate_90 * tangent;
+
+		curve_normal = glm::normalize(curve_normal);
+
+		glm::vec4 cur_offset = (last_normal + curve_normal) / 2.0f;
+		if (i <= 1) cur_offset = curve_normal;
+
+		cur_offset = glm::normalize(cur_offset);
+
+		model_coeficients.push_back(points[i].x + cur_offset.x * 0.001);
+		model_coeficients.push_back(points[i].y + cur_offset.y * 0.001);
 		model_coeficients.push_back(0.0f);
 		model_coeficients.push_back(1.0f);
-		indices.push_back(i);
-		indices.push_back(i);
-	}
 
-	Renderer::BuildTrianglesVAO(model_coeficients, indices, this->draw_object);
+		uv_coeficients.push_back(1.0);
+		uv_coeficients.push_back(0.0);
+
+		indices.push_back(cur_idx++);
+
+		model_coeficients.push_back(points[i].x - cur_offset.x * 0.001);
+		model_coeficients.push_back(points[i].y - cur_offset.y * 0.001);
+		model_coeficients.push_back(0.0f);
+		model_coeficients.push_back(1.0f);
+
+		uv_coeficients.push_back(0.0);
+		uv_coeficients.push_back(0.0);
+
+		indices.push_back(cur_idx++);
+
+		normal_coeficients.push_back(curve_normal.x);
+		normal_coeficients.push_back(curve_normal.y);
+		normal_coeficients.push_back(curve_normal.z);
+		normal_coeficients.push_back(curve_normal.w);
+
+		tangent_coeficients.push_back(tangent.x);
+		tangent_coeficients.push_back(tangent.y);
+		tangent_coeficients.push_back(tangent.z);
+		tangent_coeficients.push_back(tangent.w);
+
+		normal_coeficients.push_back(curve_normal.x);
+		normal_coeficients.push_back(curve_normal.y);
+		normal_coeficients.push_back(curve_normal.z);
+		normal_coeficients.push_back(curve_normal.w);
+
+		tangent_coeficients.push_back(tangent.x);
+		tangent_coeficients.push_back(tangent.y);
+		tangent_coeficients.push_back(tangent.z);
+		tangent_coeficients.push_back(tangent.w);
+
+		last_normal = curve_normal;
+	}
+	indices.push_back(cur_idx-1);
+	indices.push_back(cur_idx-1);
+
+
+	Renderer::BuildTrianglesVAO(model_coeficients, normal_coeficients, tangent_coeficients, uv_coeficients, indices, this->draw_object);
 	this->draw_object->indexes_size = indices.size();
 	Renderer::pq.push(make_tuple(2, this->draw_object, Transform()));
 }

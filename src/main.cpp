@@ -12,7 +12,7 @@
 
 using namespace std;
 
-float	p_f[8] = { 25.0f / 255.0f, 25.0f / 255.0f, 25.0f / 255.0f, 255.0f / 255.0f, 10.0, 3.0, 2.0, 5.5 };
+float	p_f[8] = { 25.0f / 255.0f, 25.0f / 255.0f, 25.0f / 255.0f, 255.0f / 255.0f, 0.2, 3.0, 2.0, 5.5 };
 int		p_i[8] = { 10, 0, 0, 0, 0, 0, 0, 0 };
 bool	p_b[8] = { true, true, false, false, false, false, false, false };
 bool	i_p[6] = { false, false ,false ,false ,false ,false };
@@ -81,6 +81,7 @@ int main() {
 	glm::vec2* selectedPointA = 0;
 	glm::vec2* selectedPointB = 0;
 	glm::vec2* selectedPointC = 0;
+	bool PointIsControl = 0;
 	Spline* selectedSpline = 0;
 
 	// while loop
@@ -110,6 +111,18 @@ int main() {
 							selectedPointC = &(i->point);
 							selectedSpline = s;
 							found = 1;
+							PointIsControl = 0;
+							break;
+						}
+					}
+					if (i->handleR != i->point) {
+						if (glm::distance(mousePos, i->handleR) <= 0.2) {
+							selectedPointA = &(i->handleR);
+							selectedPointB = &(i->handleL);
+							selectedPointC = &(i->point);
+							selectedSpline = s;
+							found = 1;
+							PointIsControl = 0;
 							break;
 						}
 					}
@@ -119,18 +132,8 @@ int main() {
 						selectedPointC = 0;
 						selectedSpline = s;
 						found = 1;
+						PointIsControl = 1;
 						break;
-					}
-					
-					if (i->handleR != i->point) {
-						if (glm::distance(mousePos, i->handleR) <= 0.2) {
-							selectedPointA = &(i->handleR);
-							selectedPointB = &(i->handleL);
-							selectedPointC = &(i->point);
-							selectedSpline = s;
-							found = 1;
-							break;
-						}
 					}
 				}
 				
@@ -171,7 +174,7 @@ int main() {
 
 		// render
 		float* pf = Scene::paramsf;
-		Renderer::drawFrame(glm::vec4(pf[0], pf[1], pf[2], 1.0f), Scene::main_camera);
+		Renderer::drawFrame(glm::vec4(pf[0], pf[1], pf[2], 1.0f), Scene::main_camera, Scene::paramsf[4]);
 
 		MainWindow::drawUI();
 
