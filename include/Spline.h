@@ -67,7 +67,7 @@ public:
 	void computeLUT();
 	void addControlPoint(glm::vec2 p1);
 	static glm::vec2 pointAt(ControlPoint* p1, ControlPoint* p2, float t);
-	void drawSpline(int def);
+	void drawSpline(int def, glm::vec2 camera_pos);
 
 	Spline() :
 		control(vector<ControlPoint*>()),

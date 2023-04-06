@@ -126,22 +126,33 @@ void MainWindow::handle_input(GLFWwindow* window, float _speed) {
 	else Scene::is_pressed[5] = false;
 
 	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-		Scene::left_click = true;
+		Scene::click[0] = true;
 	}
 	else {
-		Scene::left_click = false;
+		Scene::click[0] = false;
 	}
 	if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-		Scene::right_click = true;
+		Scene::click[1] = true;
 	}
 	else {
-		Scene::right_click = false;
+		Scene::click[1] = false;
+	}
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
+		Scene::click[2] = true;
+	}
+	else {
+		Scene::click[2] = false;
 	}
 
 	if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-		Scene::mouse_draggin = true;
+		Scene::mouse_drag[0] = true;
 	}
-	else Scene::mouse_draggin = false;
+	else Scene::mouse_drag[0] = false;
+	
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
+		Scene::mouse_drag[2] = true;
+	}
+	else Scene::mouse_drag[2] = false;	
 
 	if (ImGui::IsKeyDown(ImGuiKey_Space)) {
 	}
@@ -169,6 +180,9 @@ void MainWindow::drawOptions() {
 		glfwGetCursorPos(window, &xpos, &ypos);
 		ImGui::Text("x: %d", std::min(std::max((int)xpos, 0), SCR_WIDTH));
 		ImGui::Text("y: %d", std::min(std::max((int)ypos, 0), SCR_HEIGHT));
+		ImGui::Text("camera: ");
+		ImGui::Text("x: %d", Scene::camera_pos.x);
+		ImGui::Text("y: %d", Scene::camera_pos.y);
 		ImGui::EndGroup();
 		ImGui::SliderFloat("Zoom", &Scene::Zoom, 0.0f, 20.0f, "%.2f");
 		ImGui::SliderFloat("Thickness", &Scene::paramsf[4], 0.0f, 50.0f, "%.2f");

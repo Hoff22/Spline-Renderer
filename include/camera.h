@@ -302,6 +302,7 @@ class LookAtCamera : public Camera {
 		return; 
 	}
 
+public:
 	void updateCameraVectors() {
 		glm::vec3 pos;
 		pos.x = cos(glm::radians(Yaw)) * cos(glm::radians(-Pitch));
@@ -318,7 +319,6 @@ class LookAtCamera : public Camera {
 		Up = glm::normalize(glm::cross(Right, Front));
 	}
 
-public:
 	glm::vec3 target = glm::vec3(0.0f,0.0f,0.0f);
 	float distanceFromTarget = 20.0f;
 };

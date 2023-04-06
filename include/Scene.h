@@ -11,9 +11,8 @@ public:
 	static float*				paramsf;
 	static int*					paramsi;
 	static bool*				paramsb;
-	static bool					left_click;
-	static bool					right_click;
-	static bool					mouse_draggin;
+	static bool*				click;
+	static bool*				mouse_drag;
 	static bool*				is_pressed;
 	static glm::vec2			camera_pos;
 	static float				Zoom;

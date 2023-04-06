@@ -69,7 +69,7 @@ void Spline::computeLUT() {
 	this->total_length = this->LUT_lengths.back().first;
 }
 
-void Spline::drawSpline(int def = 30) {
+void Spline::drawSpline(int def = 30, glm::vec2 camera_pos = glm::vec2(0.0)) {
 	
 	for (ControlPoint* i : this->control) {
 		if (i->handleL != i->point) Renderer::pq.push(make_tuple(0, &Renderer::circle_primitive, Transform(glm::vec3(i->handleL, 0.0), glm::quat(), glm::vec3(0.2))));
@@ -184,5 +184,5 @@ void Spline::drawSpline(int def = 30) {
 
 	Renderer::BuildTrianglesVAO(model_coeficients, normal_coeficients, tangent_coeficients, uv_coeficients, indices, this->draw_object);
 	this->draw_object->indexes_size = indices.size();
-	Renderer::pq.push(make_tuple(2, this->draw_object, Transform()));
+	Renderer::pq.push(make_tuple(2, this->draw_object, Transform() ) );
 }

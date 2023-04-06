@@ -16,12 +16,16 @@ float	p_f[8] = { 25.0f / 255.0f, 25.0f / 255.0f, 25.0f / 255.0f, 255.0f / 255.0f
 int		p_i[8] = { 10, 0, 0, 0, 0, 0, 0, 0 };
 bool	p_b[8] = { true, true, false, false, false, false, false, false };
 bool	i_p[6] = { false, false ,false ,false ,false ,false };
+bool	click[3] = { false, false ,false };
+bool	drag[3] = { false, false ,false };
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 glm::vec2 screen_to_world_pos(float xpos, float ypos) {
 	xpos -= MainWindow::SCR_WIDTH / 2;
 	ypos -= MainWindow::SCR_HEIGHT / 2;
 	float off = MainWindow::SCR_HEIGHT / (Scene::Zoom * 2);
-	return glm::vec2((xpos / off) + Scene::camera_pos.x, (-ypos / off) + Scene::camera_pos.y);
+	return glm::vec2((-xpos / off) + Scene::camera_pos.x, (-ypos / off) + Scene::camera_pos.y);
 }
 
 void initScene() {
@@ -29,8 +33,8 @@ void initScene() {
 	Scene::paramsi = p_i;
 	Scene::paramsb = p_b;
 	Scene::is_pressed = i_p;
-	Scene::left_click = false;
-	Scene::right_click = false;
+	Scene::click = click;
+	Scene::mouse_drag = drag;
 	Scene::main_camera = new LookAtCamera(glm::vec3(0.0, 0.0, 10.0));
 	Scene::camera_pos = glm::vec2(0.0);
 	Scene::objects = vector<Spline*>();
@@ -43,6 +47,7 @@ void updateCamera() {
 	Scene::main_camera->Zoom = Scene::Zoom;
 	Renderer::FRAME_WIDTH = MainWindow::SCR_WIDTH;
 	Renderer::FRAME_HEIGHT = MainWindow::SCR_HEIGHT;
+	((LookAtCamera*)(Scene::main_camera))->updateCameraVectors();
 }
 
 int main() {
@@ -64,6 +69,7 @@ int main() {
 	glfwSwapInterval(0);
 
 	glfwSetFramebufferSizeCallback(MainWindow::window, MainWindow::framebuffer_size_callback);
+	glfwSetScrollCallback(MainWindow::window, scroll_callback);
 
 	// glad: load all OpenGL function pointers
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -81,8 +87,9 @@ int main() {
 	glm::vec2* selectedPointA = 0;
 	glm::vec2* selectedPointB = 0;
 	glm::vec2* selectedPointC = 0;
-	bool PointIsControl = 0;
 	Spline* selectedSpline = 0;
+	bool PointIsControl = 0;
+	glm::vec2 camera_offset_point;
 
 	// while loop
 	while (MainWindow::is_open()) {
@@ -91,16 +98,16 @@ int main() {
 		double mouseX, mouseY;
 		glfwGetCursorPos(MainWindow::window, &mouseX, &mouseY);
 		MainWindow::handle_input(MainWindow::window, 1.0f);
-			
+
 		if (Scene::paramsb[0]) {
 			Scene::objects.clear();
 			Scene::paramsb[0] = false;
 		}
 
 		// calculate shit
-		if (Scene::left_click) {
+		if (Scene::click[0]) {
 			glm::vec2 mousePos = screen_to_world_pos(mouseX, mouseY);
-			
+
 			for (auto s : Scene::objects) {
 				bool found = 0;
 				for (ControlPoint* i : s->control) {
@@ -136,13 +143,13 @@ int main() {
 						break;
 					}
 				}
-				
+
 				if (found) break;
 
 				selectedSpline = 0;
 			}
 		}
-		else if (Scene::right_click) {
+		else if (Scene::click[1]) {
 			glm::vec2 mousePos = screen_to_world_pos(mouseX, mouseY);
 			if (selectedSpline == 0) {
 				Scene::objects.push_back(new Spline(mousePos));
@@ -154,7 +161,7 @@ int main() {
 				selectedSpline->updatePoints();
 			}
 		}
-		if ((Scene::left_click or Scene::mouse_draggin) and selectedPointA != 0) {
+		if ((Scene::click[0] or Scene::mouse_drag[0]) and selectedPointA != 0) {
 			*selectedPointA = screen_to_world_pos(mouseX, mouseY);
 			if (Scene::paramsb[2] and selectedPointC != 0) {
 				*selectedPointB = *selectedPointC - (*selectedPointA - *selectedPointC);
@@ -164,9 +171,13 @@ int main() {
 		else {
 			selectedPointA = 0;
 		}
+		if (Scene::click[2] or Scene::mouse_drag[2]) {
+			Scene::camera_pos += camera_offset_point - screen_to_world_pos(mouseX, mouseY);
+		}
+		camera_offset_point = screen_to_world_pos(mouseX, mouseY);
 
 		if (Scene::paramsb[1]) {
-			for (auto s : Scene::objects) s->drawSpline(Scene::paramsi[0]);
+			for (auto s : Scene::objects) s->drawSpline(Scene::paramsi[0], Scene::camera_pos);
 		}
 
 		//update camera
@@ -184,4 +195,9 @@ int main() {
 	MainWindow::cleanupUI();
 
 	return 0;
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	Scene::Zoom -= yoffset;
 }
