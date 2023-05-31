@@ -60,8 +60,6 @@ public:
 		float tz = t.z;
 
 		return Matrix(
-			// PREENCHA AQUI A MATRIZ DE TRANSLAÇÃO (3D) EM COORD. HOMOGÊNEAS
-			// UTILIZANDO OS PARÂMETROS tx, ty e tz
 			1.0f, 0.0f, 0.0f, tx,  // LINHA 1
 			0.0f, 1.0f, 0.0f, ty,  // LINHA 2
 			0.0f, 0.0f, 1.0f, tz,  // LINHA 3
@@ -82,8 +80,6 @@ public:
 		float sz = s.z;
 
 		return Matrix(
-			// PREENCHA AQUI A MATRIZ DE ESCALAMENTO (3D) EM COORD. HOMOGÊNEAS
-			// UTILIZANDO OS PARÂMETROS sx, sy e sz
 			sx, 0.0f, 0.0f, 0.0f,  // LINHA 1
 			0.0f, sy, 0.0f, 0.0f,  // LINHA 2
 			0.0f, 0.0f, sz, 0.0f,  // LINHA 3
@@ -104,8 +100,6 @@ public:
 		float c = cos(angle);
 		float s = sin(angle);
 		return Matrix(
-			// PREENCHA AQUI A MATRIZ DE ROTAÇÃO (3D) EM TORNO DO EIXO X EM COORD.
-			// HOMOGÊNEAS, UTILIZANDO OS PARÂMETROS c e s
 			1.0f, 0.0f, 0.0f, 0.0f,  // LINHA 1
 			0.0f, c, -s, 0.0f,  // LINHA 2
 			0.0f, s, c, 0.0f,  // LINHA 3
@@ -169,8 +163,6 @@ public:
 		float vz = v.z;
 
 		return Matrix(
-			// PREENCHA AQUI A MATRIZ DE ROTAÇÃO (3D) EM TORNO DO EIXO v EM COORD.
-			// HOMOGÊNEAS, UTILIZANDO OS PARÂMETROS vx, vy, vz, c e s (FÓRMULA DE RODRIGUES)
 			vx * vx * (1 - c) + c, vx * vy * (1 - c) + vz * s, vx * vz * (1 - c) + vy * s, 0.0f,  // LINHA 1
 			vx * vy * (1 - c) + vz * s, vy * vy * (1 - c) + c, vy * vz * (1 - c) - vx * s, 0.0f,  // LINHA 2
 			vx * vz * (1 - c) - vy * s, vy * vz * (1 - c) + vx * s, vz * vz * (1 - c) + c, 0.0f,  // LINHA 3
@@ -203,15 +195,6 @@ public:
 		float wz = w.z;
 
 		return Matrix(
-			// PREENCHA AQUI A MATRIZ DE MUDANÇA DE SISTEMA DE COORDENADAS (3D)
-			// PARA AS COORDENADAS DE CÂMERA (MATRIZ VIEW HOMOGÊNEA), UTILIZANDO
-			// OS PARÂMETROS ux,uy,uz, vx,vy,vz, wx,wy,wz, position_c, origin_o,
-			// e a função dotproduct().
-			//
-			// ATENÇÃO: O produto escalar, computado pela função dotproduct(), está
-			// definido somente para argumentos que são VETORES. Não existe produto
-			// escalar de PONTOS.
-			//
 			ux, uy, uz, dot(-u, position_c - origin_o),  // LINHA 1
 			vx, vy, vz, dot(-v, position_c - origin_o),  // LINHA 2
 			wx, wy, wz, dot(-w, position_c - origin_o),  // LINHA 3
@@ -225,16 +208,16 @@ public:
 		return Matrix_Translate(position) * Matrix_Scale(scale) * Matrix_Rotate_Z(r.z) * Matrix_Rotate_Y(r.y) * Matrix_Rotate_X(r.x) * I;
 	}
 
-	void lookAt(vec3 target, vec3 worldUp = vec3(0.0,1.0,0.0)) {
+	Transform lookAt(vec3 target, vec3 worldUp = vec3(0.0,1.0,0.0)) {
 		target = normalize(target);
-
-		vec3 axis = cross(vec3(0.0, 0.0, -1.0), target);
-		float w = 1.0f + dot(vec3(0.0, 0.0, -1.0), target);
-
-		rotation = normalize(quat(w, axis));
 
 		vec3 front = getFront();
 		vec3 up = getUp();
+		vec3 axis = cross(front, target);
+		float w = 1.0f + dot(front, target);
+
+		rotation = normalize(quat(w, axis));
+
 
 		vec3 realUp = normalize(cross(cross(front, worldUp), front));
 
@@ -242,6 +225,8 @@ public:
 		w = 1.0f + dot(up, realUp);
 
 		rotation = normalize(quat(w, axis)) * rotation;
+		
+		return *this;
 	}
 
 	vec3 getFront() {

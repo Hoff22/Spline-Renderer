@@ -91,7 +91,6 @@ int main() {
 	bool PointIsControl = 0;
 	glm::vec2 camera_offset_point;
 
-	// while loop
 	while (MainWindow::is_open()) {
 
 		glfwPollEvents();
@@ -104,7 +103,7 @@ int main() {
 			Scene::paramsb[0] = false;
 		}
 
-		// calculate shit
+		// node interaction/selection logic
 		if (Scene::click[0]) {
 			glm::vec2 mousePos = screen_to_world_pos(mouseX, mouseY);
 
@@ -176,14 +175,13 @@ int main() {
 		}
 		camera_offset_point = screen_to_world_pos(mouseX, mouseY);
 
-		if (Scene::paramsb[1]) {
-			for (auto s : Scene::objects) s->drawSpline(Scene::paramsi[0], Scene::camera_pos);
-		}
-
-		//update camera
+		// update camera
 		updateCamera();
 
 		// render
+		if (Scene::paramsb[1]) {
+			for (auto s : Scene::objects) s->drawSpline(Scene::paramsi[0], Scene::camera_pos);
+		}
 		float* pf = Scene::paramsf;
 		Renderer::drawFrame(glm::vec4(pf[0], pf[1], pf[2], 1.0f), Scene::main_camera, Scene::paramsf[4]);
 
@@ -199,5 +197,11 @@ int main() {
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	Scene::Zoom -= yoffset;
+	constexpr float zoom_Strength = 0.1;
+	double mouseX, mouseY;
+	glfwGetCursorPos(MainWindow::window, &mouseX, &mouseY);
+	glm::vec2 mousePos = screen_to_world_pos(mouseX, mouseY);
+
+	Scene::camera_pos += (mousePos - Scene::camera_pos) * (float)yoffset * zoom_Strength;
+	Scene::Zoom -= Scene::Zoom * (float)yoffset * zoom_Strength;
 }

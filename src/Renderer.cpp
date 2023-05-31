@@ -4,6 +4,7 @@ GLsizei Renderer::FRAME_WIDTH = 800;
 GLsizei Renderer::FRAME_HEIGHT = 600;
 Shader Renderer::lineShader;
 DrawObject Renderer::circle_primitive;
+DrawObject Renderer::line_primitive;
 priority_queue<tuple<int, DrawObject*, Transform>> Renderer::pq;
 
 GLuint Renderer::BuildTrianglesVAO(const vector<float>& model_coefficients, const vector<float>& normal_coefficients, const vector<GLuint>& indices)
@@ -178,15 +179,18 @@ void Renderer::RenderTriangles(DrawObject* obj, const Transform& tr, Camera* cam
 	if (prio == 0) {
 		lineShader.setFloat4("solid_color", glm::vec4(0.5, 0.5, 0.5, 1.0));
 	}
-	else if (prio == 1) {
+	else if (prio == 2) {
 		lineShader.setFloat4("solid_color", glm::vec4(0.8, 0.8, 0.8, 1.0));
 	}
-	else if (prio == 2) {
+	else if (prio == 4) {
 		lineShader.setFloat4("solid_color", glm::vec4(0.0, 0.0, 0.0, 1.0));
 		lineShader.setFloat("thickness", thickness);
 		lineShader.setFloat("isLineSegment", 1.0);
 	}
-	else if (prio == 3) {
+	else if (prio == 8) {
+		lineShader.setFloat4("solid_color", glm::vec4(0.8, 0.8, 0.8, 1.0));
+	}
+	else {
 		lineShader.setFloat4("solid_color", glm::vec4(0.8, 0.8, 0.8, 1.0));
 	}
 
@@ -195,7 +199,8 @@ void Renderer::RenderTriangles(DrawObject* obj, const Transform& tr, Camera* cam
 	glBindVertexArray(obj->VAO);
 	glCullFace(GL_BACK);
 	glLineWidth(2);
-	if(prio == 2) glDrawElements(GL_TRIANGLE_STRIP, obj->indexes_size, GL_UNSIGNED_INT, 0);
+	if(prio == 4) glDrawElements(GL_TRIANGLE_STRIP, obj->indexes_size, GL_UNSIGNED_INT, 0);
+	else if(prio == 1) glDrawElements(GL_LINES, obj->indexes_size, GL_UNSIGNED_INT, 0);
 	else glDrawElements(GL_TRIANGLES, obj->indexes_size, GL_UNSIGNED_INT, 0);
 
 	glBindVertexArray(0);
@@ -249,6 +254,21 @@ void Renderer::setupPrimitives() {
 		circle_mesh.normal_coefficients,
 		circle_mesh.indices
 		);
+
+	vector<float> line_model_coefficients = {
+		0.0,0.0,0.0,1.0,
+		0.0,0.0,-1.0,1.0
+	};
+	vector<GLuint> line_indices= {
+		0,1
+	};
+
+	line_primitive.indexes_size = (int)line_indices.size();
+	line_primitive.VAO = BuildTrianglesVAO(
+		line_model_coefficients,
+		line_indices
+	);
+	
 
 	lineShader = Shader("src/vertex.glsl", "src/fragment.glsl");
 }
